@@ -191,8 +191,20 @@ jobject To_JObject(JNIEnv *env, jlong context_ptr, int expected_type, JSValue re
             return env->NewObject(doubleCls, doubleInitMethodID, pres);
         case TYPE_BOOLEAN:
             return env->NewObject(booleanCls, booleanInitMethodID, JS_VALUE_GET_BOOL(result));
-        case TYPE_STRING:
-            return env->NewStringUTF(JS_ToCString(ctx, result));
+        case TYPE_STRING: {
+            const char *str = JS_ToCString(ctx, result);
+            jobject bb = env->NewDirectByteBuffer((void *)str, strlen(str));
+            jclass cls_Charset = env->FindClass("java/nio/charset/Charset");
+            jmethodID mid_Charset_forName = env->GetStaticMethodID(cls_Charset, "forName", "(Ljava/lang/String;)Ljava/nio/charset/Charset;");
+            jobject charset = env->CallStaticObjectMethod(cls_Charset, mid_Charset_forName, env->NewStringUTF("UTF-8"));
+            jmethodID mid_Charset_decode = env->GetMethodID(cls_Charset, "decode", "(Ljava/nio/ByteBuffer;)Ljava/nio/CharBuffer;");
+            jobject cb = env->CallObjectMethod(charset, mid_Charset_decode, bb);
+            env->DeleteLocalRef(bb);
+            jclass cls_CharBuffer = env->FindClass("java/nio/CharBuffer");
+            jmethodID mid_CharBuffer_toString = env->GetMethodID(cls_CharBuffer, "toString", "()Ljava/lang/String;");
+            return env->CallObjectMethod(cb, mid_CharBuffer_toString);
+//            return env->NewStringUTF(JS_ToCString(ctx, result));
+        }
         case TYPE_JS_ARRAY:
         case TYPE_JS_OBJECT:
         case TYPE_JS_FUNCTION:
