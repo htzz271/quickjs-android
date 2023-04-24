@@ -216,4 +216,8 @@ public class QuickJS implements Closeable {
         System.loadLibrary("quickjs");
         System.loadLibrary("quickjs-android");
     }
+
+    public void setCorrectUtfBytes(boolean correctUtfBytes) {
+        quickJSNative._setCorrectUtfBytes(runtimePtr, correctUtfBytes);
+    }
 }

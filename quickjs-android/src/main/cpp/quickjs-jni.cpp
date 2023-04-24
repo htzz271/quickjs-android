@@ -66,6 +66,8 @@ jfieldID js_value_u_int32_id;
 jfieldID js_value_u_float64_id;
 jfieldID js_value_u_ptr_id;
 
+bool correctUtfBytes = false;
+
 void initES6Module(JSRuntime *rt);
 
 bool JS_Equals(JSValue v1, JSValue v2) {
@@ -192,18 +194,25 @@ jobject To_JObject(JNIEnv *env, jlong context_ptr, int expected_type, JSValue re
         case TYPE_BOOLEAN:
             return env->NewObject(booleanCls, booleanInitMethodID, JS_VALUE_GET_BOOL(result));
         case TYPE_STRING: {
-            const char *str = JS_ToCString(ctx, result);
-            jobject bb = env->NewDirectByteBuffer((void *)str, strlen(str));
-            jclass cls_Charset = env->FindClass("java/nio/charset/Charset");
-            jmethodID mid_Charset_forName = env->GetStaticMethodID(cls_Charset, "forName", "(Ljava/lang/String;)Ljava/nio/charset/Charset;");
-            jobject charset = env->CallStaticObjectMethod(cls_Charset, mid_Charset_forName, env->NewStringUTF("UTF-8"));
-            jmethodID mid_Charset_decode = env->GetMethodID(cls_Charset, "decode", "(Ljava/nio/ByteBuffer;)Ljava/nio/CharBuffer;");
-            jobject cb = env->CallObjectMethod(charset, mid_Charset_decode, bb);
-            env->DeleteLocalRef(bb);
-            jclass cls_CharBuffer = env->FindClass("java/nio/CharBuffer");
-            jmethodID mid_CharBuffer_toString = env->GetMethodID(cls_CharBuffer, "toString", "()Ljava/lang/String;");
-            return env->CallObjectMethod(cb, mid_CharBuffer_toString);
-//            return env->NewStringUTF(JS_ToCString(ctx, result));
+            if (correctUtfBytes) {
+                const char *str = JS_ToCString(ctx, result);
+                jobject bb = env->NewDirectByteBuffer((void *) str, strlen(str));
+                jclass cls_Charset = env->FindClass("java/nio/charset/Charset");
+                jmethodID mid_Charset_forName = env->GetStaticMethodID(cls_Charset, "forName",
+                                                                       "(Ljava/lang/String;)Ljava/nio/charset/Charset;");
+                jobject charset = env->CallStaticObjectMethod(cls_Charset, mid_Charset_forName,
+                                                              env->NewStringUTF("UTF-8"));
+                jmethodID mid_Charset_decode = env->GetMethodID(cls_Charset, "decode",
+                                                                "(Ljava/nio/ByteBuffer;)Ljava/nio/CharBuffer;");
+                jobject cb = env->CallObjectMethod(charset, mid_Charset_decode, bb);
+                env->DeleteLocalRef(bb);
+                jclass cls_CharBuffer = env->FindClass("java/nio/CharBuffer");
+                jmethodID mid_CharBuffer_toString = env->GetMethodID(cls_CharBuffer, "toString",
+                                                                     "()Ljava/lang/String;");
+                return env->CallObjectMethod(cb, mid_CharBuffer_toString);
+            } else {
+                return env->NewStringUTF(JS_ToCString(ctx, result));
+            }
         }
         case TYPE_JS_ARRAY:
         case TYPE_JS_OBJECT:
@@ -745,4 +754,11 @@ Java_com_quickjs_QuickJSNativeImpl__1newClass(JNIEnv *env, jobject thiz, jlong c
                                         JS_CFUNC_constructor, java_caller_id);
     JS_SetPropertyStr(ctx, func, "java_caller_id", JS_NewInt32(ctx, java_caller_id));
     return TO_JAVA_OBJECT(env, ctx, func);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_quickjs_QuickJSNativeImpl__1setCorrectUtfBytes(JNIEnv *env, jobject thiz, jlong context_ptr,
+                                              jboolean _correctUtfBytes) {
+    correctUtfBytes = _correctUtfBytes;
 }

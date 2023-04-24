@@ -79,4 +79,6 @@ class QuickJSNativeImpl implements QuickJSNative {
     @Override
     public native JSFunction _newClass(long contextPtr, int javaCallerId);
 
+    @Override
+    public native void _setCorrectUtfBytes(long contextPtr, boolean correctUtfBytes);
 }

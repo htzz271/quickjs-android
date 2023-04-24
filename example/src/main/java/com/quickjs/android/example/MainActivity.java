@@ -26,11 +26,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         quickJS = QuickJS.createRuntimeWithEventQueue();
+        quickJS.setCorrectUtfBytes(true);
         jsContext = quickJS.createContext();
         jsContext.addPlugin(new ConsolePlugin() {
             @Override
             public void println(int priority, String msg) {
-                Log.e("MainActivity", Thread.currentThread().getName());
+                Log.e("MainActivity", "println " + msg);
                 super.println(priority, msg);
             }
         });
@@ -68,11 +69,12 @@ public class MainActivity extends AppCompatActivity {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        jsContext.executeVoidScript("setTimeout(function(){console.log(count++)},1000)", null);
+//                        jsContext.executeVoidScript("setTimeout(function(){console.log(count++)},1000)", null);
 //                        for (int i = 0; i < 10; i++) {
 //                            int count = jsContext.executeIntegerScript("console.log(count++);count;", null);
 //                            Log.e("console", count + "");
 //                        }
+                        jsContext.executeVoidScript("console.log('hahah哈\uD83E\uDD70哈哈')", null);
                     }
                 }).start();
             }

@@ -250,4 +250,9 @@ class EventQueue implements QuickJSNative {
     public JSFunction _newClass(long contextPtr, int javaCallerId) {
         return post(() -> quickJSNative._newClass(contextPtr, javaCallerId));
     }
+
+    @Override
+    public void _setCorrectUtfBytes(long contextPtr, boolean correctUtfBytes) {
+        postVoid(() -> quickJSNative._setCorrectUtfBytes(contextPtr, correctUtfBytes));
+    }
 }

@@ -50,4 +50,6 @@ public interface QuickJSNative {
     String[] _getException(long contextPtr);
 
     JSFunction _newClass(long contextPtr, int javaCallerId);
+
+    void _setCorrectUtfBytes(long contextPtr, boolean correctUtfBytes);
 }
